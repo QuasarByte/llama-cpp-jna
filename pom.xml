@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.quasarbyte.llama-cpp-jna</groupId>
+    <artifactId>llama-cpp-jna</artifactId>
+    <version>1.0.6527.0</version>
+    <packaging>pom</packaging>
+
+    <name>Java Native Access (JNA) for llama.cpp</name>
+    <description>Java Native Access bindings and example apps for llama.cpp</description>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>taluyev</id>
+            <name>Roman Taluyev</name>
+            <email>taluyev+llama-cpp-jna@gmail.com</email>
+            <organization>Roman Taluyev</organization>
+            <url>https://www.linkedin.com/in/taluyev/</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/QuasarByte/llama-cpp-jna</connection>
+        <developerConnection>scm:git:ssh://github.com:QuasarByte/llama-cpp-jna</developerConnection>
+        <url>https://github.com/QuasarByte/llama-cpp-jna</url>
+    </scm>
+
+    <modules>
+        <module>core</module>
+        <module>examples</module>
+    </modules>
+
+    <properties>
+        <!-- Compile with - release 8 to ensure compatibility with Java 8+ -->
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.release>8</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Centralized JNA version -->
+        <jna.version>5.17.0</jna.version>
+        <junit.jupiter.version>5.11.4</junit.jupiter.version>
+        <mockito.version>4.11.0</mockito.version>
+    </properties>
+
+    <!-- Dependencies are declared in profiles only -->
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.17</version>
+        </dependency>
+
+        <!-- Bridge Java Util Logging to SLF4J for Liquibase -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <version>2.0.17</version>
+        </dependency>
+
+        <!-- SLF4J simple implementation for tests -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.17</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Compiler plugin: enforce Java 8 bytecode/API -->
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <release>${maven.compiler.release}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Provide a stable Automatic-Module-Name for JPMS consumers -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Automatic-Module-Name>com.quasarbyte.llama.cpp.jna</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Windows profile -->
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <llama.library.path>C:\opt\llama.cpp-b6527-bin</llama.library.path>
+                <path.separator>;</path.separator>
+                <modelsPath>c:\opt\models</modelsPath>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>3.5.3</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
+                            <argLine>-Djava.library.path="${llama.library.path}"</argLine>
+                            <systemPropertyVariables>
+                                <jna.library.path>${llama.library.path}</jna.library.path>
+                            </systemPropertyVariables>
+                            <environmentVariables>
+                                <PATH>${env.PATH}${path.separator}${llama.library.path}</PATH>
+                            </environmentVariables>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.5.3</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                            <argLine>-Djava.library.path="${llama.library.path}"</argLine>
+                            <systemPropertyVariables>
+                                <jna.library.path>${llama.library.path}</jna.library.path>
+                            </systemPropertyVariables>
+                            <environmentVariables>
+                                <PATH>${env.PATH}${path.separator}${llama.library.path}</PATH>
+                            </environmentVariables>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+
+        </profile>
+        <!-- Linux profile -->
+        <profile>
+            <id>linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                </os>
+            </activation>
+            <properties>
+                <llama.library.path>/opt/llama.cpp-bin-b6527</llama.library.path>
+                <path.separator>:</path.separator>
+                <modelsPath>/opt/models</modelsPath>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>3.5.3</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
+                            <argLine>-Djava.library.path="${llama.library.path}"</argLine>
+                            <systemPropertyVariables>
+                                <jna.library.path>${llama.library.path}</jna.library.path>
+                                <modelsPath>${modelsPath}</modelsPath>
+                            </systemPropertyVariables>
+                            <environmentVariables>
+                                <PATH>${env.PATH}${path.separator}${llama.library.path}</PATH>
+                                <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}${path.separator}${llama.library.path}</LD_LIBRARY_PATH>
+                                <MODELS_PATH>${modelsPath}</MODELS_PATH>
+                            </environmentVariables>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.5.3</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                            <argLine>-Djava.library.path="${llama.library.path}"</argLine>
+                            <systemPropertyVariables>
+                                <jna.library.path>${llama.library.path}</jna.library.path>
+                                <modelsPath>${modelsPath}</modelsPath>
+                            </systemPropertyVariables>
+                            <environmentVariables>
+                                <PATH>${env.PATH}${path.separator}${llama.library.path}</PATH>
+                                <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}${path.separator}${llama.library.path}</LD_LIBRARY_PATH>
+                                <MODELS_PATH>${modelsPath}</MODELS_PATH>
+                            </environmentVariables>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+
+        </profile>
+        <!-- Profile for JDK 8 builds -->
+        <profile>
+            <id>jna-java8</id>
+            <activation>
+                <!-- Active when building with JDK 8 -->
+                <jdk>[1.8,9)</jdk>
+            </activation>
+            <dependencies>
+                <!-- Classic JNA artifact (classpath-friendly),
+                     jna-platform transitively brings jna -->
+                <dependency>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna-platform</artifactId>
+                    <version>${jna.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Profile for JDK 9+ builds -->
+        <profile>
+            <id>jna-java9-plus</id>
+            <activation>
+                <!-- Active when building with JDK 9 or newer -->
+                <jdk>[9,)</jdk>
+            </activation>
+            <dependencies>
+                <!-- JPMS-friendly variant: includes proper module-info -->
+                <dependency>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna-platform-jpms</artifactId>
+                    <version>${jna.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+</project>
